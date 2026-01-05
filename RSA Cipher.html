@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+  <html lang="id">
+  <head>
+  <meta charset="UTF-8">
+  <title>Implementasi RSA Cipher (Input File .txt)</title>
+  <style>
+      /* ===== Gaya Dasar ===== */
+      body {
+          font-family: 'Poppins', Arial, sans-serif;
+          background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+          margin: 0;
+          padding: 0;
+      }
+
+      h2 {
+          text-align: center;
+          margin-top: 30px;
+          color: #004d40;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+      }
+
+      /* ===== Container ===== */
+      .container {
+          background: white;
+          width: 600px;
+          margin: 40px auto;
+          border-radius: 12px;
+          box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+          padding: 25px 35px;
+          transition: 0.3s;
+      }
+
+      .container:hover {
+          transform: scale(1.01);
+          box-shadow: 0px 6px 18px rgba(0,0,0,0.15);
+      }
+
+      label {
+          font-weight: 600;
+          color: #004d40;
+          display: block;
+          margin-top: 10px;
+      }
+
+      input[type="number"], input[type="file"] {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #bdbdbd;
+          border-radius: 8px;
+          font-size: 14px;
+          margin-top: 5px;
+          transition: 0.2s;
+      }
+
+      input[type="number"]:focus, input[type="file"]:focus {
+          border-color: #00796b;
+          outline: none;
+          box-shadow: 0 0 5px rgba(0,121,107,0.3);
+      }
+
+      /* ===== Tombol ===== */
+      .btn {
+          background: #00796b;
+          color: white;
+          border: none;
+          padding: 10px 18px;
+          border-radius: 6px;
+          margin-top: 15px;
+          cursor: pointer;
+          transition: 0.3s;
+      }
+
+      .btn:hover {
+          background: #004d40;
+          transform: translateY(-2px);
+      }
+
+      /* ===== Tabel Hasil ===== */
+      table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+      }
+
+      table, th, td {
+          border: 1px solid #cfd8dc;
+      }
+
+      th {
+          background-color: #00796b;
+          color: white;
+          padding: 10px;
+          text-align: center;
+      }
+
+      td {
+          padding: 8px;
+          text-align: center;
+          background-color: #f9f9f9;
+      }
+
+      /* ===== Hasil ===== */
+      .result {
+          background: #e0f2f1;
+          border-left: 5px solid #00796b;
+          padding: 10px 15px;
+          margin-top: 20px;
+          border-radius: 6px;
+          color: #004d40;
+      }
+
+      /* ===== Mode Radio ===== */
+      .radio-group {
+          margin-top: 10px;
+          color: #004d40;
+      }
+
+      footer {
+          text-align: center;
+          font-size: 12px;
+          color: #777;
+          margin-top: 30px;
+      }
+  </style>
+  </head>
+  <body>
+
+  <h2>🔐 RSA Cipher (Input dari File .txt)</h2>
+
+  <div class="container">
+  <form method="post" enctype="multipart/form-data">
+      <label>Bilangan Prima p:</label>
+      <input type="number" name="p" required>
+
+      <label>Bilangan Prima q:</label>
+      <input type="number" name="q" required>
+
+      <label>Upload File (.txt):</label>
+      <input type="file" name="textfile" accept=".txt" required>
+
+      <div class="radio-group">
+          <input type="radio" name="mode" value="enkripsi" checked> Enkripsi
+          <input type="radio" name="mode" value="dekripsi"> Dekripsi
+      </div>
+
+      <button type="submit" name="proses" class="btn">🚀 Proses</button>
+  </form>
+
+  <?php
+  function gcd($a, $b) {
+      return ($b == 0) ? $a : gcd($b, $a % $b);
+  }
+
+  function modexp($base, $exp, $mod) {
+      $result = 1;
+      $base = $base % $mod;
+      while ($exp > 0) {
+          if ($exp % 2 == 1)
+              $result = ($result * $base) % $mod;
+          $exp = floor($exp / 2);
+          $base = ($base * $base) % $mod;
+      }
+      return $result;
+  }
+
+  if (isset($_POST['proses'])) {
+      $p = (int)$_POST['p'];
+      $q = (int)$_POST['q'];
+      $mode = $_POST['mode'];
+
+      // Baca isi file
+      if ($_FILES['textfile']['error'] == 0) {
+          $text = strtoupper(trim(file_get_contents($_FILES['textfile']['tmp_name'])));
+          $text = preg_replace("/[^A-Z0-9 ]/", "", $text); // hanya huruf, angka, spasi
+      } else {
+          echo "<div class='result'>❌ Gagal membaca file. Pastikan formatnya .txt</div>";
+          exit;
+      }
+
+      $n = $p * $q;
+      $phi = ($p - 1) * ($q - 1);
+
+      $e = 7;
+      while (gcd($e, $phi) != 1) {
+          $e++;
+      }
+
+      $d = 1;
+      while ((($d * $e) % $phi) != 1) {
+          $d++;
+      }
+
+      echo "<div class='result'><b>Hasil Perhitungan</b><br>
+          p: $p, q: $q, n = $n, φ(n) = $phi<br>
+          e (public key): $e, d (private key): $d
+          </div>";
+
+      if ($mode == "enkripsi") {
+          echo "<h3>Proses Enkripsi</h3>";
+          echo "<table>
+                  <tr><th>Karakter</th><th>Nilai M</th><th>C = M^e mod n</th></tr>";
+          $cipher = [];
+          for ($i = 0; $i < strlen($text); $i++) {
+              $char = $text[$i];
+              if ($char == " ") continue;
+              $m = ord($char) - 64;
+              if ($m < 1 || $m > 26) continue;
+              $c = modexp($m, $e, $n);
+              echo "<tr><td>$char</td><td>$m</td><td>$c</td></tr>";
+              $cipher[] = $c;
+          }
+          echo "</table>";
+          $hasil = implode(" ", $cipher);
+          file_put_contents("hasil_rsa.txt", $hasil);
+          echo "<div class='result'>Ciphertext: <b>$hasil</b></div>";
+          echo "<a href='hasil_rsa.txt' download class='btn'>💾 Download Hasil</a>";
+
+      } else {
+          echo "<h3>Proses Dekripsi</h3>";
+          $nums = explode(" ", $text);
+          echo "<table>
+                  <tr><th>Nilai C</th><th>M = C^d mod n</th><th>Karakter</th></tr>";
+          $plain = "";
+          foreach ($nums as $c) {
+              $m = modexp($c, $d, $n);
+              $char = chr($m + 64);
+              echo "<tr><td>$c</td><td>$m</td><td>$char</td></tr>";
+              $plain .= $char;
+          }
+          echo "</table>";
+          file_put_contents("hasil_rsa.txt", $plain);
+          echo "<div class='result'>Plaintext: <b>$plain</b></div>";
+          echo "<a href='hasil_rsa.txt' download class='btn'>💾 Download Hasil</a>";
+      }
+  }
+  ?>
+  </div>
+
+  <footer>© 2025 Tugas 6 RSA Cipher (File Input)</footer>
+  </body>
+  </html>

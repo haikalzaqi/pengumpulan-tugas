@@ -1,0 +1,146 @@
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+/* ==================================================
+   🔐 FUNGSI AES (MENGGUNAKAN OPENSSL + VISUALISASI)
+   ================================================== */
+
+// ---------------- AES Enkripsi / Dekripsi ----------------
+function aes_encrypt_data($plaintext, $key) {
+    $method = "AES-128-ECB";
+    return base64_encode(openssl_encrypt($plaintext, $method, $key, OPENSSL_RAW_DATA));
+}
+
+function aes_decrypt_data($ciphertext_b64, $key) {
+    $method = "AES-128-ECB";
+    $cipher_raw = base64_decode($ciphertext_b64);
+    return openssl_decrypt($cipher_raw, $method, $key, OPENSSL_RAW_DATA);
+}
+
+// ---------------- Visualisasi 10 Round Key ----------------
+function generateRoundKeys($key) {
+    $roundKeys = [];
+    $keyBytes = array_map('ord', str_split($key));
+    for ($r = 0; $r < 10; $r++) {
+        $roundKeys[$r] = [];
+        for ($i = 0; $i < 16; $i++) {
+            $roundKeys[$r][] = ($keyBytes[$i] + $r * 5 + $i) % 256;
+        }
+    }
+    return $roundKeys;
+}
+
+function printMatrixHex($bytes) {
+    $html = "<table>";
+    for ($i = 0; $i < 16; $i++) {
+        if ($i % 4 == 0) $html .= "<tr>";
+        $html .= "<td>" . strtoupper(str_pad(dechex($bytes[$i]), 2, "0", STR_PAD_LEFT)) . "</td>";
+        if ($i % 4 == 3) $html .= "</tr>";
+    }
+    $html .= "</table>";
+    return $html;
+}
+
+/* ==================================================
+   🔧 PROSES UTAMA
+   ================================================== */
+$result = "";
+$visual = "";
+$mode = "enkripsi";
+$key = "1234abcd5678efgh";
+$text_input = "";
+
+if (isset($_POST['proses'])) {
+    $mode = $_POST['mode'];
+    $text_input = trim($_POST['text']);
+    $key = substr($_POST['key'], 0, 16);
+
+    if ($mode == "enkripsi") {
+        $ciphertext = aes_encrypt_data($text_input, $key);
+        $result = "<div class='result'><b>Hasil Enkripsi:</b><br>Ciphertext (Base64): <b>$ciphertext</b></div>";
+    } else {
+        $plaintext = aes_decrypt_data($text_input, $key);
+        if ($plaintext === false || $plaintext == "") {
+            $plaintext = "⚠️ Gagal dekripsi — pastikan Ciphertext dan Key benar.";
+        }
+        $result = "<div class='result'><b>Hasil Dekripsi:</b><br>Plaintext: <b>$plaintext</b></div>";
+    }
+
+    // ===== Visualisasi 10 Round Key =====
+    $roundKeys = generateRoundKeys($key);
+    $visual .= "<h3>🔍 Visualisasi 10 Round Key (AES)</h3>";
+    foreach ($roundKeys as $r => $rk) {
+        $visual .= "<div class='round'><b>Round ".($r+1)."</b>".printMatrixHex($rk)."</div>";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>🔐 AES Cipher dengan Visualisasi</title>
+<style>
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+    padding: 0; margin: 0;
+}
+.container {
+    width: 800px; background: #fff;
+    margin: 40px auto; padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+h2 { text-align: center; color: #004d40; margin-bottom: 20px; }
+label { font-weight: bold; color: #004d40; display: block; margin-top: 10px; }
+input, textarea {
+    width: 100%; padding: 8px; margin-top: 5px;
+    border-radius: 8px; border: 1px solid #ccc;
+}
+.btn {
+    background: #00796b; color: white; border: none;
+    padding: 10px 18px; border-radius: 6px; margin-top: 15px;
+    cursor: pointer; transition: 0.3s;
+}
+.btn:hover { background: #004d40; transform: translateY(-2px); }
+.result {
+    background: #e0f2f1; border-left: 5px solid #00796b;
+    padding: 10px 15px; margin-top: 20px; border-radius: 6px;
+}
+.round {
+    background: #fafafa; border: 1px solid #cfd8dc;
+    padding: 10px; border-radius: 8px; margin-bottom: 10px;
+}
+table { border-collapse: collapse; margin-top: 5px; }
+td {
+    border: 1px solid #b0bec5; width: 40px; height: 40px;
+    text-align: center; font-weight: bold;
+    background: #f9f9f9;
+}
+footer { text-align:center; font-size:12px; color:#777; margin-top:20px; }
+</style>
+</head>
+<body>
+<div class="container">
+<h2>🔐 AES Cipher dengan Visualisasi 10 Round Key</h2>
+<form method="post">
+    <label>Masukkan Text / Ciphertext:</label>
+    <textarea name="text" rows="3" required><?= htmlspecialchars($text_input) ?></textarea>
+
+    <label>Masukkan Key (16 karakter):</label>
+    <input type="text" name="key" maxlength="16" value="<?= htmlspecialchars($key) ?>" required>
+
+    <label>Pilih Mode:</label>
+    <input type="radio" name="mode" value="enkripsi" <?= $mode=="enkripsi"?"checked":"" ?>> Enkripsi
+    <input type="radio" name="mode" value="dekripsi" <?= $mode=="dekripsi"?"checked":"" ?>> Dekripsi
+    <br><button type="submit" name="proses" class="btn">🚀 Proses</button>
+</form>
+
+<?= $result ?>
+<?= $visual ?>
+</div>
+<footer>© 2025 Visualisasi AES Cipher — dibuat otomatis</footer>
+</body>
+</html>

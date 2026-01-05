@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hill Cipher (2x2) - Enkripsi & Dekripsi dari File</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 40px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 60px;
+            text-align: center;
+        }
+        .matrix {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Hill Cipher (2x2) - Enkripsi & Dekripsi (Input dari File)</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        <div class="matrix">
+            <label>Matriks Kunci (2x2):</label><br>
+            <input type="number" name="a" required>
+            <input type="number" name="b" required><br>
+            <input type="number" name="c" required>
+            <input type="number" name="d" required>
+        </div>
+
+        <label>Pilih File (.txt):</label><br>
+        <input type="file" name="inputFile" accept=".txt" required><br><br>
+
+        <label>Pilih Mode:</label><br>
+        <input type="radio" name="mode" value="enkripsi" checked> Enkripsi
+        <input type="radio" name="mode" value="dekripsi"> Dekripsi<br><br>
+
+        <input type="submit" name="proses" value="Proses">
+    </form>
+
+    <h3>Hasil:</h3>
+
+<?php
+if (isset($_POST['proses'])) {
+    $a = $_POST['a'];
+    $b = $_POST['b'];
+    $c = $_POST['c'];
+    $d = $_POST['d'];
+    $mode = $_POST['mode'];
+
+    // === Baca isi file upload ===
+    $fileTmp = $_FILES['inputFile']['tmp_name'];
+    $text = strtoupper(trim(file_get_contents($fileTmp)));
+
+    // === Fungsi bantu ===
+    function huruf_ke_angka($ch) { return ord($ch) - 65; }
+    function angka_ke_huruf($num) { return chr(($num % 26) + 65); }
+
+    // === Fungsi invers matriks mod 26 ===
+    function inverse_mod26($a, $b, $c, $d) {
+        $det = ($a * $d - $b * $c) % 26;
+        if ($det < 0) $det += 26;
+        for ($i = 0; $i < 26; $i++) {
+            if (($det * $i) % 26 == 1) {
+                $det_inv = $i;
+                break;
+            }
+        }
+        $inv_a = ($det_inv * $d) % 26;
+        $inv_b = ($det_inv * -$b) % 26;
+        $inv_c = ($det_inv * -$c) % 26;
+        $inv_d = ($det_inv * $a) % 26;
+        return [($inv_a + 26) % 26, ($inv_b + 26) % 26, ($inv_c + 26) % 26, ($inv_d + 26) % 26];
+    }
+
+    // === Tambah X jika teks ganjil ===
+    if (strlen($text) % 2 != 0) $text .= 'X';
+
+    if ($mode == "dekripsi") {
+        list($a, $b, $c, $d) = inverse_mod26($a, $b, $c, $d);
+    }
+
+    $result = '';
+    for ($i = 0; $i < strlen($text); $i += 2) {
+        $x1 = huruf_ke_angka($text[$i]);
+        $x2 = huruf_ke_angka($text[$i+1]);
+
+        $y1 = ($a * $x1 + $b * $x2) % 26;
+        $y2 = ($c * $x1 + $d * $x2) % 26;
+
+        $result .= angka_ke_huruf($y1) . angka_ke_huruf($y2);
+    }
+
+    echo "<b>Isi File Asli:</b> " . htmlspecialchars($text) . "<br>";
+    echo "<b>Mode:</b> " . strtoupper($mode) . "<br>";
+    echo "<b>Output:</b> " . htmlspecialchars($result) . "<br><br>";
+
+    // === Simpan hasil ke file baru ===
+    $outputFile = "output_" . $mode . ".txt";
+    file_put_contents($outputFile, $result);
+    echo "<a href='$outputFile' download>Download Hasil ($outputFile)</a>";
+}
+?>
+</body>
+</html>

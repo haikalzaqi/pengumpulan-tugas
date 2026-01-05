@@ -1,0 +1,161 @@
+<?php
+// Fungsi konversi huruf ↔ angka
+function charToNum($char) {
+    return ord(strtoupper($char)) - 65;
+}
+function numToChar($num) {
+    return chr(($num % 26) + 65);
+}
+
+// === Enkripsi Vigenere ===
+function vigenereEncrypt($plaintext, $key, &$processTable) {
+    $plaintext = strtoupper(str_replace(' ', '', $plaintext));
+    $key = strtoupper(str_replace(' ', '', $key));
+    $ciphertext = '';
+    $keyLength = strlen($key);
+
+    for ($i = 0; $i < strlen($plaintext); $i++) {
+        $p = charToNum($plaintext[$i]);
+        $k = charToNum($key[$i % $keyLength]);
+        $c = ($p + $k) % 26;
+        $cipher = numToChar($c);
+        $ciphertext .= $cipher;
+
+        // Simpan proses ke tabel
+        $processTable[] = [
+            'index' => $i + 1,
+            'plain_char' => $plaintext[$i],
+            'plain_val' => $p,
+            'key_char' => $key[$i % $keyLength],
+            'key_val' => $k,
+            'cipher_val' => $c,
+            'cipher_char' => $cipher
+        ];
+    }
+    return $ciphertext;
+}
+
+// === Dekripsi Vigenere ===
+function vigenereDecrypt($ciphertext, $key, &$processTable) {
+    $ciphertext = strtoupper(str_replace(' ', '', $ciphertext));
+    $key = strtoupper(str_replace(' ', '', $key));
+    $plaintext = '';
+    $keyLength = strlen($key);
+
+    for ($i = 0; $i < strlen($ciphertext); $i++) {
+        $c = charToNum($ciphertext[$i]);
+        $k = charToNum($key[$i % $keyLength]);
+        $p = ($c - $k + 26) % 26;
+        $plain = numToChar($p);
+        $plaintext .= $plain;
+
+        // Simpan proses ke tabel
+        $processTable[] = [
+            'index' => $i + 1,
+            'cipher_char' => $ciphertext[$i],
+            'cipher_val' => $c,
+            'key_char' => $key[$i % $keyLength],
+            'key_val' => $k,
+            'plain_val' => $p,
+            'plain_char' => $plain
+        ];
+    }
+    return $plaintext;
+}
+
+// === Logika Form ===
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $key = strtoupper(trim($_POST['key']));
+    $text = strtoupper(trim($_POST['text']));
+    $mode = $_POST['mode'];
+
+    $processTable = []; // tabel proses
+
+    if ($mode === 'encrypt') {
+        $result = vigenereEncrypt($text, $key, $processTable);
+    } else {
+        $result = vigenereDecrypt($text, $key, $processTable);
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vigenere Cipher (Dengan Tabel Proses)</title>
+    <style>
+        body { font-family: Arial; margin: 30px; }
+        table { border-collapse: collapse; margin-top: 20px; width: 80%; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        input[type=text] { width: 300px; }
+    </style>
+</head>
+<body>
+    <h2>Vigenere Cipher (Menggunakan Mod 26)</h2>
+    <form method="post">
+        <label><b>Masukkan Kunci (Key):</b></label><br>
+        <input type="text" name="key" value="<?= $_POST['key'] ?? '' ?>" required><br><br>
+
+        <label><b>Masukkan Teks:</b></label><br>
+        <input type="text" name="text" value="<?= $_POST['text'] ?? '' ?>" required><br><br>
+
+        <label><b>Pilih Mode:</b></label><br>
+        <input type="radio" name="mode" value="encrypt" <?= (($_POST['mode'] ?? '') === 'encrypt') ? 'checked' : '' ?>> Enkripsi
+        <input type="radio" name="mode" value="decrypt" <?= (($_POST['mode'] ?? '') === 'decrypt') ? 'checked' : '' ?>> Dekripsi<br><br>
+
+        <button type="submit">Proses</button>
+    </form>
+
+    <?php if (isset($result)): ?>
+        <h3>Hasil:</h3>
+        <p><b>Mode:</b> <?= strtoupper($mode) ?></p>
+        <p><b>Kunci:</b> <?= strtoupper($key) ?></p>
+        <p><b>Input:</b> <?= strtoupper($text); ?></p>
+        <p><b>Output:</b> <?= $result; ?></p>
+
+        <h3>Tabel Proses <?= strtoupper($mode) === 'ENCRYPT' ? 'Enkripsi' : 'Dekripsi'; ?>:</h3>
+        <table>
+            <tr>
+                <?php if ($mode === 'encrypt'): ?>
+                    <th>No</th>
+                    <th>Plain Huruf</th>
+                    <th>Nilai P</th>
+                    <th>Key Huruf</th>
+                    <th>Nilai K</th>
+                    <th>(P + K) mod 26</th>
+                    <th>Cipher Huruf</th>
+                <?php else: ?>
+                    <th>No</th>
+                    <th>Cipher Huruf</th>
+                    <th>Nilai C</th>
+                    <th>Key Huruf</th>
+                    <th>Nilai K</th>
+                    <th>(C - K + 26) mod 26</th>
+                    <th>Plain Huruf</th>
+                <?php endif; ?>
+            </tr>
+            <?php foreach ($processTable as $row): ?>
+                <tr>
+                    <td><?= $row['index']; ?></td>
+                    <?php if ($mode === 'encrypt'): ?>
+                        <td><?= $row['plain_char']; ?></td>
+                        <td><?= $row['plain_val']; ?></td>
+                        <td><?= $row['key_char']; ?></td>
+                        <td><?= $row['key_val']; ?></td>
+                        <td><?= $row['cipher_val']; ?></td>
+                        <td><?= $row['cipher_char']; ?></td>
+                    <?php else: ?>
+                        <td><?= $row['cipher_char']; ?></td>
+                        <td><?= $row['cipher_val']; ?></td>
+                        <td><?= $row['key_char']; ?></td>
+                        <td><?= $row['key_val']; ?></td>
+                        <td><?= $row['plain_val']; ?></td>
+                        <td><?= $row['plain_char']; ?></td>
+                    <?php endif; ?>
+                </tr>
+            <?php endforeach; ?>
+        </table>
+    <?php endif; ?>
+</body>
+</html>

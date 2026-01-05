@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Implementasi RSA Cipher</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; text-align: center; }
+        th { background-color: #f0f0f0; }
+        input, textarea, select { margin: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+
+<h2>Implementasi RSA Cipher</h2>
+
+<form method="post">
+    Bilangan Prima p: <input type="number" name="p" required><br>
+    Bilangan Prima q: <input type="number" name="q" required><br>
+    Masukkan Plaintext / Ciphertext:<br>
+    <textarea name="text" rows="3" cols="40" required></textarea><br>
+
+    Pilih Mode:
+    <input type="radio" name="mode" value="enkripsi" checked> Enkripsi
+    <input type="radio" name="mode" value="dekripsi"> Dekripsi<br><br>
+
+    <input type="submit" name="proses" value="Proses">
+</form>
+
+<?php
+// Fungsi GCD
+function gcd($a, $b) {
+    return ($b == 0) ? $a : gcd($b, $a % $b);
+}
+
+// Fungsi pangkat modulo manual (pengganti bcpowmod jika tidak aktif)
+function modexp($base, $exp, $mod) {
+    $result = 1;
+    $base = $base % $mod;
+    while ($exp > 0) {
+        if ($exp % 2 == 1)
+            $result = ($result * $base) % $mod;
+        $exp = floor($exp / 2);
+        $base = ($base * $base) % $mod;
+    }
+    return $result;
+}
+
+if (isset($_POST['proses'])) {
+    $p = (int)$_POST['p'];
+    $q = (int)$_POST['q'];
+    $text = strtoupper(trim($_POST['text']));
+    $mode = $_POST['mode'];
+
+    $n = $p * $q;
+    $phi = ($p - 1) * ($q - 1);
+
+    // Tentukan e (kunci publik)
+    $e = 7;
+    while (gcd($e, $phi) != 1) {
+        $e++;
+    }
+
+    // Tentukan d (kunci privat)
+    $d = 1;
+    while ((($d * $e) % $phi) != 1) {
+        $d++;
+    }
+
+    echo "<h3>Hasil Perhitungan</h3>";
+    echo "p: $p, q: $q, n($p*$q): $n, φ($n): $phi<br>";
+    echo "e (public key): $e, d (private key): $d<br><br>";
+
+    if ($mode == "enkripsi") {
+        echo "<b>Proses Enkripsi</b><br>";
+        echo "<table>
+                <tr><th>Karakter</th><th>Nilai M</th><th>C = M^e mod n</th></tr>";
+        $cipher = [];
+        for ($i = 0; $i < strlen($text); $i++) {
+            $char = $text[$i];
+            if ($char < 'A' || $char > 'Z') continue; // skip non-huruf
+            $m = ord($char) - 64; // A=1, B=2, dst
+            $c = modexp($m, $e, $n);
+            echo "<tr><td>$char</td><td>$m</td><td>$c</td></tr>";
+            $cipher[] = $c;
+        }
+        echo "</table><br>";
+        echo "Ciphertext: <b>" . implode(" ", $cipher) . "</b>";
+
+    } else { // Dekripsi
+        echo "<b>Proses Dekripsi</b><br>";
+        $nums = explode(" ", $text);
+        echo "<table>
+                <tr><th>Nilai C</th><th>M = C^d mod n</th><th>Karakter</th></tr>";
+        $plain = "";
+        foreach ($nums as $c) {
+            $m = modexp($c, $d, $n);
+            $char = chr($m + 64);
+            echo "<tr><td>$c</td><td>$m</td><td>$char</td></tr>";
+            $plain .= $char;
+        }
+        echo "</table><br>";
+        echo "Plaintext: <b>$plain</b>";
+    }
+}
+?>
+</body>
+</html>

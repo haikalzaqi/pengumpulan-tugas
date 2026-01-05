@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Implementasi RSA Cipher</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; text-align: center; }
+        th { background-color: #f0f0f0; }
+        input, textarea, button { margin: 5px 0; padding: 5px; }
+        textarea { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+    <h2>Implementasi RSA Cipher</h2>
+
+    <label>Plaintext:</label><br>
+    <textarea id="plaintext" placeholder="Masukkan teks atau unggah file .txt"></textarea><br>
+    <input type="file" id="fileInput" accept=".txt"><br>
+
+    <label>Pilih Kunci Publik (e, n):</label><br>
+    <input type="number" id="e" placeholder="e" value="17">
+    <input type="number" id="n" placeholder="n" value="3233"><br>
+
+    <label>Kunci Privat (d, n):</label><br>
+    <input type="number" id="d" placeholder="d" value="2753">
+    <input type="number" id="n2" placeholder="n" value="3233"><br>
+
+    <button onclick="encrypt()">Enkripsi</button>
+    <button onclick="decrypt()">Dekripsi</button>
+    <button onclick="downloadText('hasil_enkripsi.txt', document.getElementById('ciphertext').value)">Download Enkripsi</button>
+    <button onclick="downloadText('hasil_dekripsi.txt', document.getElementById('decryptedText').value)">Download Dekripsi</button>
+
+    <h3>Hasil Enkripsi:</h3>
+    <textarea id="ciphertext" readonly></textarea>
+
+    <h3>Hasil Dekripsi:</h3>
+    <textarea id="decryptedText" readonly></textarea>
+
+    <script>
+        // Fungsi membaca file .txt dan tampil di textarea
+        document.getElementById('fileInput').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('plaintext').value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Fungsi enkripsi RSA sederhana
+        function encrypt() {
+            const text = document.getElementById('plaintext').value;
+            const e = parseInt(document.getElementById('e').value);
+            const n = parseInt(document.getElementById('n').value);
+
+            let encrypted = [];
+            for (let i = 0; i < text.length; i++) {
+                let code = text.charCodeAt(i);
+                let cipher = modExp(code, e, n);
+                encrypted.push(cipher);
+            }
+            document.getElementById('ciphertext').value = encrypted.join(' ');
+        }
+
+        // Fungsi dekripsi RSA sederhana
+        function decrypt() {
+            const encrypted = document.getElementById('ciphertext').value.split(' ').map(Number);
+            const d = parseInt(document.getElementById('d').value);
+            const n = parseInt(document.getElementById('n2').value);
+
+            let decrypted = '';
+            for (let i = 0; i < encrypted.length; i++) {
+                let plain = modExp(encrypted[i], d, n);
+                decrypted += String.fromCharCode(plain);
+            }
+            document.getElementById('decryptedText').value = decrypted;
+        }
+
+        // Fungsi perpangkatan modular (efisien)
+        function modExp(base, exp, mod) {
+            if (mod === 1) return 0;
+            let result = 1;
+            base = base % mod;
+            while (exp > 0) {
+                if (exp % 2 === 1) result = (result * base) % mod;
+                exp = Math.floor(exp / 2);
+                base = (base * base) % mod;
+            }
+            return result;
+        }
+
+        // Fungsi download hasil teks
+        function downloadText(filename, text) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+    </script>
+</body>
+</html>

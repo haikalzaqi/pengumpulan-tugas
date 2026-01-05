@@ -1,0 +1,103 @@
+<?php
+// ======== Caesar Cipher (Multi-Key) ========
+function caesarEncrypt($plaintext, $keys) {
+    $plaintext = strtoupper(str_replace(' ', '', $plaintext));
+    $ciphertext = "";
+    $keyCount = count($keys);
+
+    for ($i = 0; $i < strlen($plaintext); $i++) {
+        $char = $plaintext[$i];
+        if (ctype_alpha($char)) {
+            $shift = $keys[$i % $keyCount];
+            $code = (ord($char) - 65 + $shift) % 26;
+            $ciphertext .= chr($code + 65);
+        } else {
+            $ciphertext .= $char;
+        }
+    }
+
+    return $ciphertext;
+}
+
+function caesarDecrypt($ciphertext, $keys) {
+    $ciphertext = strtoupper(str_replace(' ', '', $ciphertext));
+    $plaintext = "";
+    $keyCount = count($keys);
+
+    for ($i = 0; $i < strlen($ciphertext); $i++) {
+        $char = $ciphertext[$i];
+        if (ctype_alpha($char)) {
+            $shift = $keys[$i % $keyCount];
+            $code = (ord($char) - 65 - $shift) % 26;
+            if ($code < 0) $code += 26;
+            $plaintext .= chr($code + 65);
+        } else {
+            $plaintext .= $char;
+        }
+    }
+
+    return $plaintext;
+}
+
+// ======== FORM PROCESSING ========
+$result = null;
+$keys = [];
+$mode = "";
+$text = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $k1 = intval($_POST['k1']);
+    $k2 = ($_POST['k2'] !== "") ? intval($_POST['k2']) : null;
+    $k3 = ($_POST['k3'] !== "") ? intval($_POST['k3']) : null;
+    $text = $_POST['text'];
+    $mode = $_POST['mode'];
+
+    // susun array kunci
+    $keys = [$k1];
+    if ($k2 !== null) $keys[] = $k2;
+    if ($k3 !== null) $keys[] = $k3;
+
+    if ($mode == "encrypt") {
+        $result = caesarEncrypt($text, $keys);
+    } else {
+        $result = caesarDecrypt($text, $keys);
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Caesar Cipher (Multi-key)</title>
+</head>
+<body style="font-family: Arial; margin: 30px;">
+    <h2>Caesar Cipher (Dengan Hingga 3 Kunci)</h2>
+    <form method="post">
+        <label>Masukkan Kunci 1 (Wajib):</label><br>
+        <input type="number" name="k1" value="<?= $_POST['k1'] ?? '' ?>" required><br><br>
+
+        <label>Kunci 2 (Opsional):</label><br>
+        <input type="number" name="k2" value="<?= $_POST['k2'] ?? '' ?>"><br><br>
+
+        <label>Kunci 3 (Opsional):</label><br>
+        <input type="number" name="k3" value="<?= $_POST['k3'] ?? '' ?>"><br><br>
+
+        <label>Masukkan Teks:</label><br>
+        <input type="text" name="text" value="<?= $_POST['text'] ?? '' ?>" required><br><br>
+
+        <label>Pilih Mode:</label><br>
+        <input type="radio" name="mode" value="encrypt" <?= (($_POST['mode'] ?? '') == "encrypt") ? "checked" : "" ?>> Enkripsi
+        <input type="radio" name="mode" value="decrypt" <?= (($_POST['mode'] ?? '') == "decrypt") ? "checked" : "" ?>> Dekripsi
+        <br><br>
+
+        <button type="submit">Proses</button>
+    </form>
+
+    <?php if (!empty($result)): ?>
+        <h3>Hasil:</h3>
+        <p><b><?= strtoupper($mode) ?> :</b> <?= strtoupper($text); ?></p>
+        <p><b>Output:</b> <?= $result; ?></p>
+        <p><b>Kunci Digunakan:</b> <?= implode(", ", $keys); ?></p>
+    <?php endif; ?>
+</body>
+</html>

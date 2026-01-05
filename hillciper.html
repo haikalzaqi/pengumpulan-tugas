@@ -1,0 +1,114 @@
+<?php
+function modInverse($a, $m)
+{
+    $a = $a % $m;
+    for ($x = 1; $x < $m; $x++) {
+        if (($a * $x) % $m == 1) {
+            return $x;
+        }
+    }
+    return 1;
+}
+
+function hillCipher($text, $matrix, $mode)
+{
+    $text = strtoupper(str_replace(' ', '', $text));
+    $result = "";
+    $mod = 26;
+
+    // Konversi A=1 menjadi A=0 untuk operasi, nanti dikembalikan lagi
+    $numbers = [];
+    for ($i = 0; $i < strlen($text); $i++) {
+        $numbers[] = (ord($text[$i]) - 65); // A=0, B=1...
+    }
+
+    if (count($numbers) % 2 != 0) {
+        $numbers[] = 23; // X sebagai filler
+    }
+
+    // Jika Dekripsi, cari inverse matriks
+    if ($mode == "decrypt") {
+        $det = ($matrix[0][0] * $matrix[1][1] - $matrix[0][1] * $matrix[1][0]) % $mod;
+        $det = ($det + $mod) % $mod;
+        $detInv = modInverse($det, $mod);
+
+        $matrix = [
+            [($matrix[1][1] * $detInv) % $mod, ((-$matrix[0][1] + $mod) * $detInv) % $mod],
+            [((-$matrix[1][0] + $mod) * $detInv) % $mod, ($matrix[0][0] * $detInv) % $mod],
+        ];
+    }
+
+    for ($i = 0; $i < count($numbers); $i += 2) {
+        $x = $numbers[$i];
+        $y = $numbers[$i + 1];
+
+        $resultX = ($matrix[0][0] * $x + $matrix[0][1] * $y) % $mod;
+        $resultY = ($matrix[1][0] * $x + $matrix[1][1] * $y) % $mod;
+
+        $result .= chr($resultX + 65) . chr($resultY + 65);
+    }
+
+    return $result;
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hill Cipher Modern UI</title>
+<style>
+    body { font-family: Arial; background: #f0f2f5; padding: 50px; display: flex; justify-content: center; }
+    .card { background: white; padding: 25px; border-radius: 12px; width: 450px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    h2 { text-align: center; margin-bottom: 20px; letter-spacing: 1px; }
+    input, select { width: 100%; padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; }
+    button { width: 100%; background: #007bff; border: none; padding: 12px; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #0056b3; transform: scale(1.02); }
+    .row { display: flex; gap: 10px; }
+    .row input { width: 48%; }
+    .result { background: #e9f7ef; padding: 12px; border-radius: 6px; margin-top: 10px; text-align: center; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔐 Hill Cipher (A=1 sampai Z=26)</h2>
+    <form method="POST">
+        <label>Pilih Mode</label>
+        <select name="mode">
+            <option value="encrypt">Enkripsi</option>
+            <option value="decrypt">Dekripsi</option>
+        </select>
+
+        <label>Masukkan Pesan</label>
+        <input type="text" name="text" required placeholder="Contoh: HELLO">
+
+        <label>Matriks Kunci (2x2)</label>
+        <div class="row">
+            <input type="number" name="a11" required placeholder="a11">
+            <input type="number" name="a12" required placeholder="a12">
+        </div>
+        <div class="row">
+            <input type="number" name="a21" required placeholder="a21">
+            <input type="number" name="a22" required placeholder="a22">
+        </div>
+
+        <button type="submit" name="submit">PROSES</button>
+    </form>
+
+    <?php
+    if (isset($_POST['submit'])) {
+        $text = $_POST['text'];
+        $mode = $_POST['mode'];
+        $matrix = [
+            [intval($_POST['a11']), intval($_POST['a12'])],
+            [intval($_POST['a21']), intval($_POST['a22'])]
+        ];
+        $output = hillCipher($text, $matrix, $mode);
+        echo "<div class='result'>Hasil: $output</div>";
+    }
+    ?>
+</div>
+
+</body>
+</html>
