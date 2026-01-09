@@ -8,6 +8,7 @@
 body {
     font-family: Arial, sans-serif;
     padding: 20px;
+    background: #f8f9fa;
 }
 input, textarea, button {
     width: 100%;
@@ -15,15 +16,58 @@ input, textarea, button {
     margin: 6px 0;
 }
 button {
-    background: #198754;
+    background: #0d6efd;
     color: white;
     border: none;
     cursor: pointer;
 }
 button:hover {
-    background: #146c43;
+    background: #084298;
 }
 </style>
 
-<!-- CryptoJS CDN -->
-<script src="https://cdnjs.cloudflare.com/aj
+<script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+</head>
+
+<body>
+
+<h2>AES Cipher (Advanced Encryption Standard)</h2>
+
+<label>Key:</label>
+<input type="text" id="key">
+
+<label>Text:</label>
+<textarea id="text"></textarea>
+
+<input type="radio" name="mode" value="encrypt" checked> Enkripsi
+<input type="radio" name="mode" value="decrypt"> Dekripsi
+
+<button onclick="proses()">Proses</button>
+
+<h3>Hasil:</h3>
+<textarea id="hasil" readonly></textarea>
+
+<script>
+function proses() {
+    let key = document.getElementById("key").value;
+    let text = document.getElementById("text").value;
+    let mode = document.querySelector('input[name="mode"]:checked').value;
+
+    if (!key || !text) {
+        alert("Key dan teks tidak boleh kosong!");
+        return;
+    }
+
+    if (mode === "encrypt") {
+        document.getElementById("hasil").value =
+            CryptoJS.AES.encrypt(text, key).toString();
+    } else {
+        let bytes = CryptoJS.AES.decrypt(text, key);
+        document.getElementById("hasil").value =
+            bytes.toString(CryptoJS.enc.Utf8);
+    }
+}
+</script>
+
+</body>
+</html>
