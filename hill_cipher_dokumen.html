@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Hill Cipher Dokumen</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #e0f2fe;
+}
+.container {
+    max-width: 700px;
+    background: white;
+    padding: 30px;
+    margin: 40px auto;
+    border-radius: 15px;
+}
+input, textarea, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background: #1e40af;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Hill Cipher (Dokumen / Teks Panjang)</h2>
+
+<label>Matriks Kunci (2×2)</label>
+<input placeholder="a" id="a">
+<input placeholder="b" id="b">
+<input placeholder="c" id="c">
+<input placeholder="d" id="d">
+
+<label>Isi Dokumen / Teks Panjang</label>
+<textarea id="text" rows="8"></textarea>
+
+<button onclick="encrypt()">Enkripsi</button>
+
+<h3>Hasil</h3>
+<textarea id="result" rows="6"></textarea>
+</div>
+
+<script>
+function mod(n, m) {
+    return ((n % m) + m) % m;
+}
+
+function encrypt() {
+    let a = parseInt(a.value);
+    let b = parseInt(b.value);
+    let c = parseInt(c.value);
+    let d = parseInt(d.value);
+    let text = document.getElementById("text").value
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "");
+
+    if (text.length % 2 !== 0) text += "X";
+
+    let result = "";
+
+    for (let i = 0; i < text.length; i += 2) {
+        let x1 = text.charCodeAt(i) - 65;
+        let x2 = text.charCodeAt(i+1) - 65;
+        let y1 = mod(a*x1 + b*x2, 26);
+        let y2 = mod(c*x1 + d*x2, 26);
+        result += String.fromCharCode(y1+65, y2+65);
+    }
+
+    document.getElementById("result").value = result;
+}
+</script>
+
+</body>
+</html>
