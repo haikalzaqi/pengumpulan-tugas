@@ -2,104 +2,70 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>RSA Cipher</title>
-
+<title>Hill Cipher</title>
 <style>
 body {
     font-family: Arial, sans-serif;
-    background: #f4f9f9;
-    padding: 20px;
+    background: #f0fdfa;
 }
 .container {
     max-width: 600px;
-    margin: auto;
     background: white;
-    padding: 20px;
+    padding: 25px;
+    margin: 40px auto;
     border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 input, textarea, button {
     width: 100%;
-    padding: 8px;
-    margin: 6px 0;
+    padding: 10px;
+    margin-top: 10px;
 }
 button {
-    background: #198754;
+    background: #0f766e;
     color: white;
     border: none;
     cursor: pointer;
 }
 button:hover {
-    background: #146c43;
+    background: #115e59;
+}
+.matrix {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
 }
 </style>
 </head>
-
 <body>
 
 <div class="container">
-<h2>RSA Cipher (Sederhana)</h2>
+<h2>Hill Cipher (2×2)</h2>
 
-<label>Bilangan Prima p:</label>
-<input type="number" id="p">
+<label>Matriks Kunci (2x2)</label>
+<div class="matrix">
+<input type="number" id="a" placeholder="a">
+<input type="number" id="b" placeholder="b">
+<input type="number" id="c" placeholder="c">
+<input type="number" id="d" placeholder="d">
+</div>
 
-<label>Bilangan Prima q:</label>
-<input type="number" id="q">
-
-<label>Pesan:</label>
+<label>Masukkan Teks</label>
 <textarea id="text"></textarea>
 
+<label>
 <input type="radio" name="mode" value="encrypt" checked> Enkripsi
+</label>
+<label>
 <input type="radio" name="mode" value="decrypt"> Dekripsi
+</label>
 
-<button onclick="proses()">Proses</button>
+<button onclick="process()">Proses</button>
 
-<h3>Hasil:</h3>
-<textarea id="hasil" readonly></textarea>
+<h3>Hasil</h3>
+<p id="result"></p>
 </div>
 
 <script>
-function gcd(a, b) {
-    while (b != 0) {
-        let t = b;
-        b = a % b;
-        a = t;
-    }
-    return a;
-}
-
-function modExp(base, exp, mod) {
-    let result = 1;
-    while (exp > 0) {
-        if (exp % 2 === 1) result = (result * base) % mod;
-        exp = Math.floor(exp / 2);
-        base = (base * base) % mod;
-    }
-    return result;
-}
-
-function proses() {
-    let p = parseInt(document.getElementById("p").value);
-    let q = parseInt(document.getElementById("q").value);
-    let text = document.getElementById("text").value;
-    let mode = document.querySelector('input[name="mode"]:checked').value;
-
-    if (!p || !q || !text) {
-        alert("Semua input wajib diisi!");
-        return;
-    }
-
-    let n = p * q;
-    let phi = (p - 1) * (q - 1);
-    let e = 7;
-
-    while (gcd(e, phi) !== 1) e++;
-
-    let d = 1;
-    while ((d * e) % phi !== 1) d++;
-
-    let hasil = "";
-
-    if (mode === "encrypt") {
-        for (let i = 0; i < text.length; i++) {
-            let c = modExp(text.charCodeAt(i), e, n);
-            hasil
+function mod(n, m) {
+    retur
