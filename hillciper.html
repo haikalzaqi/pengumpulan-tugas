@@ -1,114 +1,105 @@
-<?php
-function modInverse($a, $m)
-{
-    $a = $a % $m;
-    for ($x = 1; $x < $m; $x++) {
-        if (($a * $x) % $m == 1) {
-            return $x;
-        }
-    }
-    return 1;
-}
-
-function hillCipher($text, $matrix, $mode)
-{
-    $text = strtoupper(str_replace(' ', '', $text));
-    $result = "";
-    $mod = 26;
-
-    // Konversi A=1 menjadi A=0 untuk operasi, nanti dikembalikan lagi
-    $numbers = [];
-    for ($i = 0; $i < strlen($text); $i++) {
-        $numbers[] = (ord($text[$i]) - 65); // A=0, B=1...
-    }
-
-    if (count($numbers) % 2 != 0) {
-        $numbers[] = 23; // X sebagai filler
-    }
-
-    // Jika Dekripsi, cari inverse matriks
-    if ($mode == "decrypt") {
-        $det = ($matrix[0][0] * $matrix[1][1] - $matrix[0][1] * $matrix[1][0]) % $mod;
-        $det = ($det + $mod) % $mod;
-        $detInv = modInverse($det, $mod);
-
-        $matrix = [
-            [($matrix[1][1] * $detInv) % $mod, ((-$matrix[0][1] + $mod) * $detInv) % $mod],
-            [((-$matrix[1][0] + $mod) * $detInv) % $mod, ($matrix[0][0] * $detInv) % $mod],
-        ];
-    }
-
-    for ($i = 0; $i < count($numbers); $i += 2) {
-        $x = $numbers[$i];
-        $y = $numbers[$i + 1];
-
-        $resultX = ($matrix[0][0] * $x + $matrix[0][1] * $y) % $mod;
-        $resultY = ($matrix[1][0] * $x + $matrix[1][1] * $y) % $mod;
-
-        $result .= chr($resultX + 65) . chr($resultY + 65);
-    }
-
-    return $result;
-}
-?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Hill Cipher Modern UI</title>
+<title>RSA Cipher</title>
+
 <style>
-    body { font-family: Arial; background: #f0f2f5; padding: 50px; display: flex; justify-content: center; }
-    .card { background: white; padding: 25px; border-radius: 12px; width: 450px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    h2 { text-align: center; margin-bottom: 20px; letter-spacing: 1px; }
-    input, select { width: 100%; padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; }
-    button { width: 100%; background: #007bff; border: none; padding: 12px; color: white; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #0056b3; transform: scale(1.02); }
-    .row { display: flex; gap: 10px; }
-    .row input { width: 48%; }
-    .result { background: #e9f7ef; padding: 12px; border-radius: 6px; margin-top: 10px; text-align: center; font-weight: bold; }
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f9f9;
+    padding: 20px;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+input, textarea, button {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0;
+}
+button {
+    background: #198754;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background: #146c43;
+}
 </style>
 </head>
+
 <body>
 
-<div class="card">
-    <h2>🔐 Hill Cipher (A=1 sampai Z=26)</h2>
-    <form method="POST">
-        <label>Pilih Mode</label>
-        <select name="mode">
-            <option value="encrypt">Enkripsi</option>
-            <option value="decrypt">Dekripsi</option>
-        </select>
+<div class="container">
+<h2>RSA Cipher (Sederhana)</h2>
 
-        <label>Masukkan Pesan</label>
-        <input type="text" name="text" required placeholder="Contoh: HELLO">
+<label>Bilangan Prima p:</label>
+<input type="number" id="p">
 
-        <label>Matriks Kunci (2x2)</label>
-        <div class="row">
-            <input type="number" name="a11" required placeholder="a11">
-            <input type="number" name="a12" required placeholder="a12">
-        </div>
-        <div class="row">
-            <input type="number" name="a21" required placeholder="a21">
-            <input type="number" name="a22" required placeholder="a22">
-        </div>
+<label>Bilangan Prima q:</label>
+<input type="number" id="q">
 
-        <button type="submit" name="submit">PROSES</button>
-    </form>
+<label>Pesan:</label>
+<textarea id="text"></textarea>
 
-    <?php
-    if (isset($_POST['submit'])) {
-        $text = $_POST['text'];
-        $mode = $_POST['mode'];
-        $matrix = [
-            [intval($_POST['a11']), intval($_POST['a12'])],
-            [intval($_POST['a21']), intval($_POST['a22'])]
-        ];
-        $output = hillCipher($text, $matrix, $mode);
-        echo "<div class='result'>Hasil: $output</div>";
-    }
-    ?>
+<input type="radio" name="mode" value="encrypt" checked> Enkripsi
+<input type="radio" name="mode" value="decrypt"> Dekripsi
+
+<button onclick="proses()">Proses</button>
+
+<h3>Hasil:</h3>
+<textarea id="hasil" readonly></textarea>
 </div>
 
-</body>
-</html>
+<script>
+function gcd(a, b) {
+    while (b != 0) {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+function modExp(base, exp, mod) {
+    let result = 1;
+    while (exp > 0) {
+        if (exp % 2 === 1) result = (result * base) % mod;
+        exp = Math.floor(exp / 2);
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+function proses() {
+    let p = parseInt(document.getElementById("p").value);
+    let q = parseInt(document.getElementById("q").value);
+    let text = document.getElementById("text").value;
+    let mode = document.querySelector('input[name="mode"]:checked').value;
+
+    if (!p || !q || !text) {
+        alert("Semua input wajib diisi!");
+        return;
+    }
+
+    let n = p * q;
+    let phi = (p - 1) * (q - 1);
+    let e = 7;
+
+    while (gcd(e, phi) !== 1) e++;
+
+    let d = 1;
+    while ((d * e) % phi !== 1) d++;
+
+    let hasil = "";
+
+    if (mode === "encrypt") {
+        for (let i = 0; i < text.length; i++) {
+            let c = modExp(text.charCodeAt(i), e, n);
+            hasil
