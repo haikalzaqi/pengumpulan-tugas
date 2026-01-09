@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>RSA Cipher</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f9f9;
+    padding: 20px;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+input, textarea, button {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0;
+}
+button {
+    background: #198754;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background: #146c43;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>RSA Cipher (Sederhana)</h2>
+
+<label>Bilangan Prima p:</label>
+<input type="number" id="p">
+
+<label>Bilangan Prima q:</label>
+<input type="number" id="q">
+
+<label>Pesan:</label>
+<textarea id="text"></textarea>
+
+<input type="radio" name="mode" value="encrypt" checked> Enkripsi
+<input type="radio" name="mode" value="decrypt"> Dekripsi
+
+<button onclick="proses()">Proses</button>
+
+<h3>Hasil:</h3>
+<textarea id="hasil" readonly></textarea>
+</div>
+
+<script>
+function gcd(a, b) {
+    while (b != 0) {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+function modExp(base, exp, mod) {
+    let result = 1;
+    while (exp > 0) {
+        if (exp % 2 === 1) result = (result * base) % mod;
+        exp = Math.floor(exp / 2);
+        base = (base * base) % mod;
+    }
+    return result;
+}
+
+function proses() {
+    let p = parseInt(document.getElementById("p").value);
+    let q = parseInt(document.getElementById("q").value);
+    let text = document.getElementById("text").value;
+    let mode = document.querySelector('input[name="mode"]:checked').value;
+
+    if (!p || !q || !text) {
+        alert("Semua input wajib diisi!");
+        return;
+    }
+
+    let n = p * q;
+    let phi = (p - 1) * (q - 1);
+    let e = 7;
+
+    while (gcd(e, phi) !== 1) e++;
+
+    let d = 1;
+    while ((d * e) % phi !== 1) d++;
+
+    let hasil = "";
+
+    if (mode === "encrypt") {
+        for (let i = 0; i < text.length; i++) {
+            let c = modExp(text.charCodeAt(i), e, n);
+            hasil += c + " ";
+        }
+    } else {
+        let arr = text.split(" ");
+        for (let c of arr) {
+            if (c.trim() !== "") {
+                let m = modExp(parseInt(c), d, n);
+                hasil += String.fromCharCode(m);
+            }
+        }
+    }
+
+    document.getElementById("hasil").value = hasil;
+}
+</script>
+
+</body>
+</html>
